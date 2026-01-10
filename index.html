@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Contagem para Magic</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background: #020617;
+      padding: 32px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      margin-bottom: 16px;
+    }
+
+    .contador {
+      font-size: 1.4rem;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Quando o Jow jogará Magic de novo?</h1>
+    <p class="contador" id="contador">Calculando...</p>
+  </div>
+
+  <script>
+    // 1) Defina a data alvo
+    // mês em JavaScript começa do 0 (janeiro) ao 11 (dezembro)
+    const dataAlvo = new Date(2026, 2, 10, 0, 0, 0); // 10 de março
+
+    function atualizarContador() {
+      // 2) Data atual
+      const agora = new Date();
+
+      // 3) Diferença em milissegundos
+      const diferenca = dataAlvo - agora;
+
+      // Se a data já passou
+      if (diferenca <= 0) {
+        document.getElementById('contador').textContent = 'Hoje é o dia! 🎉';
+        return;
+      }
+
+      // 4) Conversões de tempo
+      const segundos = Math.floor(diferenca / 1000) % 60;
+      const minutos = Math.floor(diferenca / (1000 * 60)) % 60;
+      const horas = Math.floor(diferenca / (1000 * 60 * 60)) % 24;
+      const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24));
+
+      // 5) Atualizar o texto
+      document.getElementById('contador').textContent =
+        `${dias} dias, ${horas}h ${minutos}m ${segundos}s`;
+    }
+
+    // Atualiza imediatamente
+    atualizarContador();
+
+    // Atualiza a cada 1 segundo
+    setInterval(atualizarContador, 1000);
+  </script>
+</body>
+</html>
