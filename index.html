@@ -102,6 +102,26 @@
             display: inline-block;
         }
 
+        .profile-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .status-online {
+            color: var(--success);
+        }
+
+        .status-ingame {
+            color: var(--warning);
+        }
+
+        .status-offline {
+            color: #8f98a0;
+        }
+
         .last-updated {
             color: #8f98a0;
             font-size: 0.9rem;
@@ -284,6 +304,7 @@
             font-size: 1.8rem;
             color: var(--accent);
             overflow: hidden;
+            flex-shrink: 0;
         }
 
         .game-img img {
@@ -294,6 +315,7 @@
 
         .game-info {
             flex: 1;
+            min-width: 0;
         }
 
         .game-name {
@@ -301,6 +323,9 @@
             color: white;
             margin-bottom: 8px;
             font-size: 1.1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .game-hours {
@@ -349,6 +374,20 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        .no-games-message {
+            text-align: center;
+            padding: 40px;
+            background-color: rgba(23, 26, 33, 0.5);
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .no-games-message i {
+            font-size: 3rem;
+            color: var(--accent);
+            margin-bottom: 15px;
+        }
+
         footer {
             text-align: center;
             margin-top: 60px;
@@ -391,6 +430,28 @@
             font-size: 0.9rem;
         }
 
+        .api-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+
+        .api-status-active {
+            background-color: rgba(91, 163, 43, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(91, 163, 43, 0.4);
+        }
+
+        .api-status-error {
+            background-color: rgba(229, 57, 53, 0.2);
+            color: var(--danger);
+            border: 1px solid rgba(229, 57, 53, 0.4);
+        }
+
         @media (max-width: 1100px) {
             .games-list {
                 grid-column: span 1;
@@ -419,6 +480,10 @@
                 width: 100px;
                 height: 100px;
             }
+            
+            .game-name {
+                white-space: normal;
+            }
         }
 
         @media (max-width: 480px) {
@@ -433,6 +498,16 @@
             button {
                 justify-content: center;
             }
+            
+            .game-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .game-img {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
         }
 
         .pulse {
@@ -444,6 +519,11 @@
             70% { box-shadow: 0 0 0 10px rgba(102, 192, 244, 0); }
             100% { box-shadow: 0 0 0 0 rgba(102, 192, 244, 0); }
         }
+
+        .zero-hours {
+            opacity: 0.7;
+            filter: grayscale(0.5);
+        }
     </style>
 </head>
 <body>
@@ -454,8 +534,12 @@
                 <div class="profile-info">
                     <h1 id="profileName">Guigaum</h1>
                     <div class="steam-id" id="steamId">76561198023046376</div>
-                    <div id="profileStatus">Carregando status...</div>
+                    <div class="profile-status" id="profileStatus">
+                        <i class="fas fa-circle status-offline"></i>
+                        <span>Carregando status...</span>
+                    </div>
                     <div class="last-updated" id="lastUpdated">Última atualização: --</div>
+                    <div class="api-status" id="apiStatus">API: Conectando...</div>
                 </div>
             </div>
             
@@ -472,7 +556,7 @@
         </header>
 
         <div class="loading" id="loading">
-            <i class="fas fa-spinner"></i> Buscando dados do Guigaum...
+            <i class="fas fa-spinner"></i> Buscando dados reais do Guigaum...
         </div>
 
         <div class="error-message" id="errorMessage">
@@ -488,11 +572,11 @@
         </div>
 
         <footer>
-            <p><i class="fas fa-info-circle"></i> Esta página monitora automaticamente o perfil público do Guigaum na Steam</p>
+            <p><i class="fas fa-info-circle"></i> Esta página usa a API oficial da Steam para buscar dados em tempo real do perfil do Guigaum</p>
             <p>Os dados são atualizados a cada vez que a página é carregada ou quando o botão "Atualizar Dados" é clicado</p>
             <div class="api-note">
-                <strong>Nota sobre a API:</strong> Estamos usando uma API pública que acessa dados de perfis Steam públicos. 
-                Se o perfil for privado, algumas informações podem não estar disponíveis.
+                <strong>Dados Reais:</strong> Todas as estatísticas são calculadas com base nas informações reais da conta Steam do Guigaum, 
+                usando a chave API oficial da Steam para acesso aos dados.
             </div>
         </footer>
     </div>
@@ -500,6 +584,7 @@
     <script>
         // Configurações fixas para o perfil do Guigaum
         const STEAM_ID = "76561198023046376";
+        const STEAM_API_KEY = "B263B41F91D223C8435CD498D775CACF";
         const PROFILE_URL = "https://steamcommunity.com/profiles/76561198023046376/";
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -509,6 +594,7 @@
             const steamIdElement = document.getElementById('steamId');
             const profileStatusElement = document.getElementById('profileStatus');
             const lastUpdatedElement = document.getElementById('lastUpdated');
+            const apiStatusElement = document.getElementById('apiStatus');
             const refreshButton = document.getElementById('refreshBtn');
             const loadingElement = document.getElementById('loading');
             const errorMessage = document.getElementById('errorMessage');
@@ -526,11 +612,12 @@
                     month: '2-digit',
                     year: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    second: '2-digit'
                 });
             }
             
-            // Função para buscar dados da Steam usando API pública
+            // Função para buscar dados da Steam usando a API oficial
             async function fetchSteamData() {
                 // Mostrar loading
                 loadingElement.style.display = 'block';
@@ -538,19 +625,18 @@
                 
                 try {
                     // Atualizar timestamp
-                    lastUpdatedElement.textContent = `Última atualização: ${formatDate(new Date())}`;
+                    const currentTime = new Date();
+                    lastUpdatedElement.textContent = `Última atualização: ${formatDate(currentTime)}`;
                     
-                    // Para contornar CORS e acessar dados públicos da Steam, vamos usar um proxy público
-                    // Vamos tentar duas abordagens: uma API pública e scraping através de proxy
-                    
-                    // Tentativa 1: Usar API pública Steam Web API (requer chave, mas para dados públicos podemos usar um serviço terceiro)
-                    // Vamos usar uma combinação de métodos
-                    
-                    // Primeiro, vamos tentar obter informações do perfil
+                    // Buscar informações do perfil
                     const profileData = await getProfileInfo();
                     
-                    // Em seguida, vamos obter dados de jogos recentes
+                    // Buscar dados de jogos recentes
                     const gamesData = await getRecentGames();
+                    
+                    // Atualizar status da API
+                    apiStatusElement.textContent = "API: Conectada com sucesso";
+                    apiStatusElement.className = "api-status api-status-active";
                     
                     // Processar e exibir os dados
                     displayProfileInfo(profileData);
@@ -559,126 +645,205 @@
                     
                 } catch (error) {
                     console.error("Erro ao buscar dados:", error);
-                    showError("Não foi possível carregar os dados. O perfil pode estar privado ou há um problema de conexão.");
+                    showError(`Erro ao conectar com a API Steam: ${error.message}`);
                     
-                    // Usar dados de exemplo para demonstração
-                    useSampleData();
+                    // Atualizar status da API
+                    apiStatusElement.textContent = "API: Erro de conexão";
+                    apiStatusElement.className = "api-status api-status-error";
                 } finally {
                     loadingElement.style.display = 'none';
                 }
             }
             
-            // Função para obter informações do perfil
+            // Função para obter informações do perfil usando a API Steam
             async function getProfileInfo() {
-                // Usaremos um serviço de terceiros para contornar CORS e acessar dados públicos
-                // Exemplo: steamcommunity.com/profiles/[ID]/?xml=1
-                const xmlUrl = `https://steamcommunity.com/profiles/${STEAM_ID}/?xml=1`;
+                const url = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${STEAM_API_KEY}&steamids=${STEAM_ID}`;
                 
                 try {
-                    // Usar um proxy CORS público para acessar o XML
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(xmlUrl)}`;
-                    const response = await fetch(proxyUrl);
+                    const response = await fetch(url);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
                     const data = await response.json();
                     
-                    // Parse do XML (simplificado)
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+                    if (!data.response || !data.response.players || data.response.players.length === 0) {
+                        throw new Error("Perfil não encontrado");
+                    }
                     
-                    // Extrair informações do XML
-                    const personaName = xmlDoc.getElementsByTagName("steamID")[0]?.textContent || "Guigaum";
-                    const avatarFull = xmlDoc.getElementsByTagName("avatarFull")[0]?.textContent || "";
-                    const state = xmlDoc.getElementsByTagName("onlineState")[0]?.textContent || "offline";
+                    const player = data.response.players[0];
+                    
+                    // Determinar status
+                    let status = "offline";
+                    let statusClass = "status-offline";
+                    let statusIcon = "fa-circle";
+                    
+                    if (player.personastate === 1) {
+                        status = "online";
+                        statusClass = "status-online";
+                        statusIcon = "fa-circle";
+                    } else if (player.personastate === 3) {
+                        status = "away";
+                        statusClass = "status-offline";
+                        statusIcon = "fa-moon";
+                    } else if (player.personastate === 4) {
+                        status = "snooze";
+                        statusClass = "status-offline";
+                        statusIcon = "fa-bed";
+                    } else if (player.personastate === 6) {
+                        status = "looking to trade";
+                        statusClass = "status-online";
+                        statusIcon = "fa-shopping-cart";
+                    } else if (player.personastate === 7) {
+                        status = "looking to play";
+                        statusClass = "status-online";
+                        statusIcon = "fa-gamepad";
+                    }
+                    
+                    // Verificar se está jogando
+                    let gamePlaying = null;
+                    if (player.gameextrainfo) {
+                        status = "in-game";
+                        statusClass = "status-ingame";
+                        statusIcon = "fa-gamepad";
+                        gamePlaying = player.gameextrainfo;
+                    }
                     
                     return {
-                        name: personaName,
-                        avatar: avatarFull,
-                        status: state,
-                        profileUrl: PROFILE_URL
+                        name: player.personaname,
+                        avatar: player.avatarfull,
+                        status: status,
+                        statusClass: statusClass,
+                        statusIcon: statusIcon,
+                        gamePlaying: gamePlaying,
+                        profileUrl: player.profileurl,
+                        lastLogoff: player.lastlogoff ? new Date(player.lastlogoff * 1000) : null,
+                        timeCreated: player.timecreated ? new Date(player.timecreated * 1000) : null
                     };
+                    
                 } catch (error) {
-                    // Se falhar, retornar dados padrão
+                    console.error("Erro ao buscar perfil:", error);
+                    // Retornar dados padrão em caso de erro
                     return {
                         name: "Guigaum",
-                        avatar: "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
+                        avatar: "",
                         status: "offline",
+                        statusClass: "status-offline",
+                        statusIcon: "fa-circle",
+                        gamePlaying: null,
                         profileUrl: PROFILE_URL
                     };
                 }
             }
             
-            // Função para obter jogos recentes (usando dados simulados pois a API requer chave)
+            // Função para obter jogos recentes usando a API Steam
             async function getRecentGames() {
-                // Para dados reais, seria necessário uma chave API da Steam
-                // Como alternativa, usaremos dados simulados baseados no perfil típico
+                const url = `https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/?key=${STEAM_API_KEY}&steamid=${STEAM_ID}`;
                 
-                // Em uma implementação real com chave API:
-                // https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v1/?key=SUA_CHAVE&steamid=76561198023046376&format=json
-                
-                // Dados simulados do Guigaum (baseados em um perfil de jogador ativo)
-                return {
-                    totalHours: 92.5,
-                    games: [
-                        { 
-                            name: "Counter-Strike: Global Offensive", 
-                            hours: 48.5, 
-                            img: "https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg",
-                            appid: 730
-                        },
-                        { 
-                            name: "Dota 2", 
-                            hours: 28.0, 
-                            img: "https://cdn.cloudflare.steamstatic.com/steam/apps/570/header.jpg",
-                            appid: 570
-                        },
-                        { 
-                            name: "Apex Legends", 
-                            hours: 12.0, 
-                            img: "https://cdn.cloudflare.steamstatic.com/steam/apps/1172470/header.jpg",
-                            appid: 1172470
-                        },
-                        { 
-                            name: "Team Fortress 2", 
-                            hours: 4.0, 
-                            img: "https://cdn.cloudflare.steamstatic.com/steam/apps/440/header.jpg",
-                            appid: 440
-                        }
-                    ]
-                };
+                try {
+                    const response = await fetch(url);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Verificar se há dados
+                    if (!data.response || data.response.total_count === 0) {
+                        return {
+                            totalHours: 0,
+                            games: [],
+                            message: "Nenhum jogo jogado nas últimas 2 semanas"
+                        };
+                    }
+                    
+                    // Processar jogos
+                    const games = data.response.games || [];
+                    
+                    // Converter minutos para horas e ordenar por horas jogadas
+                    const processedGames = games.map(game => ({
+                        name: game.name,
+                        hours: (game.playtime_2weeks || 0) / 60, // Converter minutos para horas
+                        minutes: game.playtime_2weeks || 0,
+                        img: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`,
+                        appid: game.appid,
+                        playtime_forever: game.playtime_forever ? game.playtime_forever / 60 : 0 // Horas totais
+                    }))
+                    .filter(game => game.hours > 0) // Filtrar apenas jogos com horas nas últimas 2 semanas
+                    .sort((a, b) => b.hours - a.hours); // Ordenar por horas (decrescente)
+                    
+                    // Calcular total de horas
+                    const totalHours = processedGames.reduce((sum, game) => sum + game.hours, 0);
+                    
+                    return {
+                        totalHours: totalHours,
+                        totalMinutes: totalHours * 60,
+                        games: processedGames,
+                        totalGames: data.response.total_count || 0
+                    };
+                    
+                } catch (error) {
+                    console.error("Erro ao buscar jogos:", error);
+                    throw error;
+                }
             }
             
             // Função para exibir informações do perfil
             function displayProfileInfo(profile) {
-                avatarElement.src = profile.avatar;
-                profileNameElement.textContent = profile.name;
-                
-                // Configurar status com ícone e cor
-                let statusText = "";
-                let statusClass = "";
-                
-                switch(profile.status.toLowerCase()) {
-                    case "online":
-                        statusText = `<i class="fas fa-circle" style="color: #5ba32b;"></i> Online agora`;
-                        statusClass = "success";
-                        break;
-                    case "in-game":
-                        statusText = `<i class="fas fa-gamepad" style="color: #ffcc66;"></i> Em jogo agora`;
-                        statusClass = "warning";
-                        break;
-                    default:
-                        statusText = `<i class="far fa-circle" style="color: #8f98a0;"></i> Offline`;
-                        statusClass = "";
+                // Avatar
+                if (profile.avatar) {
+                    avatarElement.src = profile.avatar;
+                } else {
+                    avatarElement.src = "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg";
                 }
                 
-                profileStatusElement.innerHTML = statusText;
-                profileStatusElement.className = statusClass;
+                // Nome
+                profileNameElement.textContent = profile.name;
+                
+                // Status
+                let statusText = profile.gamePlaying || profile.status;
+                statusText = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+                
+                profileStatusElement.innerHTML = `
+                    <i class="fas ${profile.statusIcon} ${profile.statusClass}"></i>
+                    <span>${statusText}</span>
+                `;
+                profileStatusElement.className = `profile-status ${profile.statusClass}`;
             }
             
             // Função para exibir estatísticas
-            function displayStats(games) {
+            function displayStats(gamesData) {
                 statsGrid.innerHTML = '';
                 
-                // Calcular estatísticas
-                const totalHours = games.totalHours;
+                // Verificar se há jogos
+                if (gamesData.totalHours === 0 || gamesData.games.length === 0) {
+                    const noGamesCard = document.createElement('div');
+                    noGamesCard.className = 'stat-card games-list';
+                    noGamesCard.innerHTML = `
+                        <h3><i class="fas fa-gamepad"></i> Jogos Recentes</h3>
+                        <div class="no-games-message">
+                            <i class="fas fa-gamepad"></i>
+                            <h3>Nenhum jogo jogado nas últimas 2 semanas</h3>
+                            <p>O perfil do Guigaum não registrou horas de jogo nas últimas duas semanas.</p>
+                            <p>Isso pode significar que ele não jogou nenhum jogo recentemente ou o perfil está privado para essas informações.</p>
+                        </div>
+                    `;
+                    statsGrid.appendChild(noGamesCard);
+                    
+                    // Adicionar estatística básica
+                    statsGrid.appendChild(createStatCard(
+                        "Horas Jogadas (2 semanas)",
+                        `<div class="stat-value">0h</div>`,
+                        `Nenhuma hora registrada nas últimas 2 semanas no perfil do <span class="highlight">Guigaum</span>.`,
+                        "fa-clock zero-hours"
+                    ));
+                    
+                    return;
+                }
+                
+                const totalHours = gamesData.totalHours;
                 const avgHoursPerDay = (totalHours / 14).toFixed(1);
                 const workDaysEquivalent = (totalHours / 8).toFixed(1);
                 const movieEquivalent = Math.round(totalHours / 2);
@@ -689,7 +854,7 @@
                 // 1. Estatística Principal: Horas totais
                 statsGrid.appendChild(createStatCard(
                     "Horas Jogadas (2 semanas)",
-                    `<div class="stat-value">${totalHours}h</div>`,
+                    `<div class="stat-value">${totalHours.toFixed(1)}h</div>`,
                     `Total de horas que <span class="highlight">Guigaum</span> passou jogando na Steam nas últimas 2 semanas.`,
                     "fa-clock",
                     totalHours > 100 ? "warning" : ""
@@ -739,23 +904,25 @@
                     "fa-balance-scale"
                 ));
                 
-                // 6. Tempo para completar jogos
-                const gamesToComplete = (totalHours / 20).toFixed(1);
+                // 6. Jogos únicos
+                const uniqueGames = gamesData.games.length;
                 statsGrid.appendChild(createStatCard(
-                    "Jogos Completados Potencialmente",
-                    `<div class="stat-value">${gamesToComplete}</div>`,
-                    `Com esse tempo, daria para completar aproximadamente <span class="highlight">${gamesToComplete}</span> jogos de 20 horas cada.`,
-                    "fa-gamepad"
+                    "Jogos Diferentes",
+                    `<div class="stat-value">${uniqueGames}</div>`,
+                    `Número de jogos diferentes que <span class="highlight">Guigaum</span> jogou nas últimas 2 semanas.`,
+                    "fa-dice"
                 ));
                 
-                // 7. Estatística de eficiência
-                const efficiencyScore = Math.min(100, Math.round((totalHours / 140) * 100));
-                statsGrid.appendChild(createStatCard(
-                    "Eficiência de Jogo",
-                    `<div class="stat-value ${efficiencyScore > 80 ? "warning" : efficiencyScore > 50 ? "" : "danger"}">${efficiencyScore}%</div>`,
-                    `Percentual das horas disponíveis (10h/dia × 14 dias = 140h) que foram utilizadas para jogar.`,
-                    "fa-battery-three-quarters"
-                ));
+                // 7. Jogo mais jogado
+                if (gamesData.games.length > 0) {
+                    const topGame = gamesData.games[0];
+                    statsGrid.appendChild(createStatCard(
+                        "Jogo Favorito",
+                        `<div class="stat-value">${topGame.name.substring(0, 15)}${topGame.name.length > 15 ? '...' : ''}</div>`,
+                        `Jogou <span class="highlight">${topGame.hours.toFixed(1)}h</span> de ${topGame.name} nas últimas 2 semanas.`,
+                        "fa-crown"
+                    ));
+                }
                 
                 // 8. Lista de jogos
                 const gamesListCard = document.createElement('div');
@@ -768,26 +935,27 @@
                 
                 // Adicionar jogos à lista
                 const gamesContainer = document.getElementById('gamesContainer');
-                const maxHours = Math.max(...games.games.map(g => g.hours));
+                const maxHours = Math.max(...gamesData.games.map(g => g.hours));
                 
-                games.games.forEach(game => {
+                gamesData.games.forEach(game => {
                     const gameElement = document.createElement('div');
                     gameElement.className = 'game-item';
                     
                     const percentage = (game.hours / maxHours) * 100;
                     const percentOfTotal = ((game.hours / totalHours) * 100).toFixed(1);
+                    const dailyAvg = (game.hours / 14).toFixed(1);
                     
                     gameElement.innerHTML = `
                         <div class="game-img">
                             <img src="${game.img}" alt="${game.name}" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\"fas fa-gamepad\"></i>';">
                         </div>
                         <div class="game-info">
-                            <div class="game-name">${game.name}</div>
-                            <div class="game-hours">${game.hours.toFixed(1)} horas</div>
+                            <div class="game-name" title="${game.name}">${game.name}</div>
+                            <div class="game-hours">${game.hours.toFixed(1)} horas (${game.minutes} minutos)</div>
                             <div class="progress-container">
                                 <div class="progress-label">
                                     <span>${percentOfTotal}% do tempo total</span>
-                                    <span>${(game.hours / 14).toFixed(1)}h/dia</span>
+                                    <span>${dailyAvg}h/dia</span>
                                 </div>
                                 <div class="progress-bar">
                                     <div class="progress" style="width: ${percentage}%"></div>
@@ -801,42 +969,56 @@
             }
             
             // Função para exibir curiosidades
-            function displayFunFacts(games) {
+            function displayFunFacts(gamesData) {
                 funFactsContainer.innerHTML = '';
                 
-                const totalHours = games.totalHours;
-                const avgHoursPerDay = (totalHours / 14).toFixed(1);
+                const totalHours = gamesData.totalHours;
                 
+                // Se não houver horas jogadas
+                if (totalHours === 0) {
+                    const noGamesFact = document.createElement('div');
+                    noGamesFact.className = 'fun-fact';
+                    noGamesFact.innerHTML = `
+                        <h4><i class="fas fa-calendar-times"></i> Período de Descanso</h4>
+                        <p>Guigaum não jogou nenhum jogo nas últimas 2 semanas. Pode ser um período de descanso, férias ou simplesmente não teve tempo para jogar.</p>
+                    `;
+                    funFactsContainer.appendChild(noGamesFact);
+                    return;
+                }
+                
+                const avgHoursPerDay = (totalHours / 14).toFixed(1);
                 const funFacts = [
                     {
-                        title: "Comparação com sono",
-                        content: `Com ${avgHoursPerDay}h/dia jogando, isso é ${avgHoursPerDay >= 8 ? "mais" : "menos"} do que a média de horas de sono recomendada (8h).`,
-                        icon: "fa-bed"
+                        title: "Tempo de Jogo Real",
+                        content: `Guigaum jogou <span class="highlight">${totalHours.toFixed(1)} horas reais</span> nos últimos 14 dias, segundo os dados oficiais da Steam.`,
+                        icon: "fa-clock"
                     },
                     {
-                        title: "Energia consumida",
-                        content: `Considerando um PC gamer (500W), isso consumiu aproximadamente ${(totalHours * 0.5).toFixed(1)} kWh de energia.`,
+                        title: "Distribuição Diária",
+                        content: `Isso significa uma média de <span class="highlight">${avgHoursPerDay} horas por dia</span> dedicadas aos jogos.`,
+                        icon: "fa-chart-pie"
+                    },
+                    {
+                        title: "Consumo de Energia",
+                        content: `Considerando um PC gamer (500W), isso consumiu aproximadamente <span class="highlight">${(totalHours * 0.5).toFixed(1)} kWh</span> de energia.`,
                         icon: "fa-bolt"
                     },
                     {
-                        title: "Desenvolvimento de habilidades",
-                        content: `Com ${totalHours}h de prática, seria possível aprender um novo idioma básico ou desenvolver uma habilidade complexa.`,
-                        icon: "fa-brain"
+                        title: "Comparação com Atividades",
+                        content: `No mesmo tempo, daria para assistir <span class="highlight">${Math.round(totalHours / 2)} filmes</span> ou ler <span class="highlight">${Math.round(totalHours / 0.5)} capítulos</span> de um livro.`,
+                        icon: "fa-book"
                     },
                     {
-                        title: "Viagem",
-                        content: `No tempo gasto jogando, daria para viajar de avião do Brasil até o Japão ${Math.round(totalHours / 24)} vezes.`,
-                        icon: "fa-plane"
+                        title: "Tempo Total de Jogo",
+                        content: gamesData.games.length > 0 ? 
+                            `Seu jogo principal tem <span class="highlight">${gamesData.games[0].playtime_forever.toFixed(1)} horas totais</span> jogadas desde que começou a jogar.` :
+                            `Dados históricos de jogos estão disponíveis através da API Steam.`,
+                        icon: "fa-history"
                     },
                     {
-                        title: "Produção criativa",
-                        content: `Com ${totalHours}h, um escritor poderia produzir ${Math.round(totalHours / 10)} capítulos de um livro ou um artista criar ${Math.round(totalHours / 2)} ilustrações detalhadas.`,
-                        icon: "fa-paint-brush"
-                    },
-                    {
-                        title: "Exercício físico",
-                        content: `Se transformasse o tempo de jogo em exercícios, daria para caminhar aproximadamente ${(totalHours * 5).toFixed(0)}km ou fazer ${(totalHours * 60).toFixed(0)} minutos de musculação.`,
-                        icon: "fa-running"
+                        title: "Diversidade de Jogos",
+                        content: `Jogou <span class="highlight">${gamesData.games.length} jogos diferentes</span> nas últimas 2 semanas, mostrando ${gamesData.games.length > 3 ? "uma boa variedade" : "foco em alguns títulos"}.`,
+                        icon: "fa-gamepad"
                     }
                 ];
                 
@@ -869,58 +1051,14 @@
                 errorMessage.style.display = 'block';
             }
             
-            // Usar dados de exemplo (para quando a API falhar)
-            function useSampleData() {
-                const sampleProfile = {
-                    name: "Guigaum",
-                    avatar: "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
-                    status: "in-game",
-                    profileUrl: PROFILE_URL
-                };
-                
-                const sampleGames = {
-                    totalHours: 92.5,
-                    games: [
-                        { 
-                            name: "Counter-Strike: Global Offensive", 
-                            hours: 48.5, 
-                            img: "https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg",
-                            appid: 730
-                        },
-                        { 
-                            name: "Dota 2", 
-                            hours: 28.0, 
-                            img: "https://cdn.cloudflare.steamstatic.com/steam/apps/570/header.jpg",
-                            appid: 570
-                        },
-                        { 
-                            name: "Apex Legends", 
-                            hours: 12.0, 
-                            img: "https://cdn.cloudflare.steamstatic.com/steam/apps/1172470/header.jpg",
-                            appid: 1172470
-                        },
-                        { 
-                            name: "Team Fortress 2", 
-                            hours: 4.0, 
-                            img: "https://cdn.cloudflare.steamstatic.com/steam/apps/440/header.jpg",
-                            appid: 440
-                        }
-                    ]
-                };
-                
-                displayProfileInfo(sampleProfile);
-                displayStats(sampleGames);
-                displayFunFacts(sampleGames);
-                
-                // Mostrar aviso que estamos usando dados de exemplo
-                showError("Usando dados de exemplo. Para dados em tempo real, é necessário configurar uma chave API da Steam.");
-            }
-            
             // Event Listeners
             refreshButton.addEventListener('click', fetchSteamData);
             
             // Carregar dados ao iniciar
             fetchSteamData();
+            
+            // Atualizar automaticamente a cada 5 minutos
+            setInterval(fetchSteamData, 5 * 60 * 1000);
         });
     </script>
 </body>
