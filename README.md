@@ -1,37 +1,112 @@
-# 🎮 Guigaum's Steam Analytics Dashboard
+# 🎮 Guigaum Steam Analytics
 
-![Status](https://img.shields.io/badge/status-online-success)
-![Steam API](https://img.shields.io/badge/Steam-API-orange)
-![No Backend](https://img.shields.io/badge/backend-none-green)
-![Responsive](https://img.shields.io/badge/responsive-yes-brightgreen)
+A visually rich web dashboard that displays **real-time Steam profile statistics** using the official Steam Web API, enhanced with fun comparisons, projections, and interactive UI elements.
 
-A real-time interactive dashboard displaying Steam profile statistics with fun comparisons and visualizations. Completely client-side with smart caching and multiple fallback systems.
+This project was built as a front-end focused application to explore API consumption, caching strategies, UI/UX design, and resilience against network and CORS limitations.
 
-## ✨ Features
+---
 
-- **📊 Real-Time Statistics**: Played hours, daily averages, monthly projections
-- **🎮 Recent Games**: List of most-played games in the last 2 weeks
-- **🤔 Fun Comparisons**: 10+ creative comparisons with real-life activities
-- **🌙 Dark Theme**: Modern Steam-inspired interface design
-- **📱 Fully Responsive**: Works perfectly on desktop and mobile devices
-- **🔧 Smart Caching**: Reduces API calls and improves performance
-- **🔄 Auto-Update**: Data refreshes every 10 minutes
-- **⚡ Fast Loading**: Client-side only, no server required
-- **🔒 Privacy Focused**: No data sent to external servers
+## 🚀 Features
 
-## 🚀 Quick Start
+- 🔍 **Real-time Steam profile data**
+- 🎮 Recently played games (last 2 weeks)
+- ⏱️ Total playtime calculations and projections
+- 📊 Daily, weekly, and monthly playtime insights
+- 🧠 Fun and playful statistics comparisons
+- 🟢 Live online / in-game / offline status
+- 💾 Local cache system to reduce API requests
+- 🌐 Automatic CORS proxy fallback system
+- 📱 Fully responsive design
+- 🌙 Theme toggle (Light / Dark ready)
+- ⚠️ Offline & API failure fallback data
 
+---
 
-### Local Installation
-```bash
-# Clone the repository
-git clone https://github.com/jow320/guigaumhours.git
+## 🧩 Technologies Used
 
-# Navigate to the project directory
-cd guigaumhours
+- **HTML5**
+- **CSS3** (Custom design, animations, responsive layout)
+- **Vanilla JavaScript**
+- **Steam Web API**
+- **LocalStorage (Cache System)**
+- **Font Awesome Icons**
 
-# Open in your browser
-open index.html
-# or
-firefox index.html
-# or simply double-click index.html
+No frameworks were used — everything is built with pure JavaScript to better understand core front-end concepts.
+
+---
+
+## 🗂️ How It Works
+
+1. Fetches profile and game data from the **Steam Web API**
+2. Uses **multiple CORS proxies** as fallback to avoid request blocking
+3. Stores API responses in **localStorage** with TTL (time-to-live)
+4. Automatically:
+   - Uses cached data when valid
+   - Falls back to sample data if the API is unavailable
+5. Processes raw data into meaningful statistics and UI components
+
+---
+
+## 🔐 API & Security Notes
+
+> ⚠️ **Important:**  
+This project uses a Steam API key directly in the front-end **for educational and personal use only**.
+
+For production environments:
+- Never expose API keys in client-side code
+- Use a backend or serverless function as a proxy
+
+---
+
+## 📦 Cache Strategy
+
+| Data Type | Cache Duration |
+|---------|----------------|
+| Profile | 5 minutes |
+| Games | 10 minutes |
+| Stats | 15 minutes |
+
+Users can manually clear the cache via the interface.
+
+---
+
+## 🖥️ Live Preview
+
+🔗 **Steam Profile:**  
+https://steamcommunity.com/profiles/76561198023046376/
+
+🔗 **Repository:**  
+https://github.com/jow320/guigaumhours
+
+---
+
+## 🎯 Purpose of the Project
+
+This project was created to:
+
+- Practice real API consumption
+- Improve front-end architecture and state handling
+- Learn how to deal with unreliable external services
+- Build a polished UI using only native web technologies
+- Explore caching and performance optimization
+
+---
+
+## 🛠️ Possible Improvements
+
+- Backend proxy for API security
+- Internationalization (i18n)
+- Charts with Canvas or SVG
+- User-configurable Steam ID
+- PWA offline-first enhancements
+
+---
+
+## 📄 License
+
+This project is for **educational and personal use**.  
+Steam and all related assets are trademarks of **Valve Corporation**.
+
+---
+
+Made with ❤️ and ☕ by **Victor Estevan**
