@@ -1,7 +1,6 @@
 # 🎮 Guigaum's Steam Analytics Dashboard
 
 ![Status](https://img.shields.io/badge/status-online-success)
-![License](https://img.shields.io/badge/license-MIT-blue)
 ![Steam API](https://img.shields.io/badge/Steam-API-orange)
 ![No Backend](https://img.shields.io/badge/backend-none-green)
 ![Responsive](https://img.shields.io/badge/responsive-yes-brightgreen)
